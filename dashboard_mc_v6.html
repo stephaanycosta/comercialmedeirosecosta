@@ -537,8 +537,8 @@ function getUsers(){
   if(_usersCache)return _usersCache;
   const raw=tryStorage(()=>localStorage.getItem('mc_users'))||tryStorage(()=>sessionStorage.getItem('mc_users'))||'{}';
   const saved=JSON.parse(raw);
-  // Mescla com usuários padrão — padrões nunca somem
-  _usersCache={...DEFAULT_USERS,...saved};
+  // Padrões sempre sobrescrevem o que estiver salvo (senhas dos admins nunca mudam)
+  _usersCache={...saved,...DEFAULT_USERS};
   return _usersCache;
 }
 
@@ -565,7 +565,12 @@ function isAdmin(){return currentUser===ADMIN_USER;}
 
 function doLogin(){
   const user=document.getElementById('l-user').value.trim().toLowerCase();
-  const pass=document.getElementById('l-pass').value;
+  const pass=document.getElementById('l-pass').value.trim();
+  // Checar usuários padrão primeiro (sempre válidos)
+  if(DEFAULT_USERS[user]){
+    if(DEFAULT_USERS[user]===pass){currentUser=user;setSession(user);startApp();return;}
+    else{document.getElementById('login-err').textContent='Senha incorreta.';return;}
+  }
   const users=getUsers();
   if(!user||!pass){document.getElementById('login-err').textContent='Preencha usuário e senha.';return;}
   if(!users[user]){document.getElementById('login-err').textContent='Usuário não encontrado.';return;}
